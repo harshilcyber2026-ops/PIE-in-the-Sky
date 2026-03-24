@@ -16,12 +16,6 @@
     <span class="brand-flag">FLAG</span>VAULT
     <span class="bracket">]</span>
   </a>
-  <ul class="nav-links">
-    <li><a href="#">Home</a></li>
-    <li><a href="#" class="active">Challenges</a></li>
-    <li><a href="#">Scoreboard</a></li>
-    <li><a href="#">Rules</a></li>
-  </ul>
   <div class="nav-status">
     <div class="status-dot"></div>
     <span>LIVE</span>
@@ -205,42 +199,7 @@
 
       </div><!-- /challenges-list -->
 
-      <!-- HINTS -->
-      <div class="sec-divider"><h3>Hints</h3></div>
-
-      <div class="hints-container">
-        <div class="hint-item" id="hint1">
-          <button class="hint-toggle" onclick="revealHint('hint1')">
-            <span class="hint-num">HINT 01</span>
-            The leak is printed before input — read it, don't ignore it.
-            <span class="hint-cost">−0 pts</span>
-          </button>
-          <div class="hint-content">
-            Run <code>nc challenge.flagvault.local 9005</code> and capture the very first line of output. It contains <code>main</code>'s runtime address in hex format.
-          </div>
-        </div>
-        <div class="hint-item" id="hint2">
-          <button class="hint-toggle" onclick="revealHint('hint2')">
-            <span class="hint-num">HINT 02</span>
-            Where is win() relative to main?
-            <span class="hint-cost">−25 pts</span>
-          </button>
-          <div class="hint-content">
-            In GDB: <code>p win - main</code> → <code>-0x80</code>. Or check <code>objdump -d</code>: <code>win</code> is at offset <code>0x11e9</code>, <code>main</code> at <code>0x1269</code>.
-          </div>
-        </div>
-        <div class="hint-item" id="hint3">
-          <button class="hint-toggle" onclick="revealHint('hint3')">
-            <span class="hint-num">HINT 03</span>
-            How many bytes until RIP?
-            <span class="hint-cost">−50 pts</span>
-          </button>
-          <div class="hint-content">
-            Use <code>cyclic 100</code> in pwntools, send, check the crash offset. You'll find it's <strong>72 bytes</strong> (64 buffer + 8 saved RBP).
-          </div>
-        </div>
-      </div>
-
+  
       <!-- FLAG FORMAT -->
       <div class="flag-format">
         <span class="flag-icon">🚩</span>
@@ -261,10 +220,6 @@
             <td style="color:var(--text-hi);text-align:right;">Binary Exploitation</td>
           </tr>
           <tr style="border-bottom:1px solid var(--border);">
-            <td style="color:var(--text-dim);padding:0.5rem 0;">Points</td>
-            <td style="color:var(--accent3);text-align:right;">400</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);">
             <td style="color:var(--text-dim);padding:0.5rem 0;">Difficulty</td>
             <td style="text-align:right;"><span class="tag tag-red">Hard</span></td>
           </tr>
@@ -275,10 +230,6 @@
           <tr style="border-bottom:1px solid var(--border);">
             <td style="color:var(--text-dim);padding:0.5rem 0;">Port</td>
             <td style="color:var(--accent);text-align:right;">9005</td>
-          </tr>
-          <tr>
-            <td style="color:var(--text-dim);padding:0.5rem 0;">Solves</td>
-            <td style="color:var(--accent2);text-align:right;">21</td>
           </tr>
         </table>
       </div>
@@ -322,33 +273,6 @@
 
     </div><!-- /right sidebar -->
   </div><!-- /main-layout -->
-
-  <!-- SUBMIT FLAG SECTION -->
-  <div class="submit-section">
-    <div class="submit-title">Submit Your Flag</div>
-    <p class="submit-sub">Obtained the flag from the remote server? Enter it below.</p>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label>Team / Username</label>
-        <input id="inp-user" class="form-control" placeholder="h4ck3r_h0use" />
-      </div>
-      <div class="form-group">
-        <label>Challenge</label>
-        <select class="form-control">
-          <option>PIE in the Sky — Binary Exploitation</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="form-group flag-input-wrap">
-      <span class="prefix">FlagVault{</span>
-      <input id="flag-input" class="form-control" placeholder="your_flag_here}" style="padding-left:7.8rem;" />
-    </div>
-
-    <button class="btn btn-primary" onclick="submitFlag()">⚑ &nbsp;SUBMIT FLAG</button>
-    <div class="submit-result" id="flag-result"></div>
-  </div>
 
 </div><!-- /page-wrap -->
 
